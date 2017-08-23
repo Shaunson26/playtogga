@@ -10,7 +10,7 @@ Source the download function and the player url file (character matrix with name
 `source("Functions/downloadPlayerHTMLs.R")`  
 `load("Data/playerNamesURLs_Aug2017.RData")`  
   
-Run the function, which will save the HTMLs in the current directory.
+Run the function, which will save the HTMLs in the current directory.  
 `downloadPlayerHTMLs(login = "user", password = "password", playerNameURL = playerNameURL)`
 
 ## Cleaning player tables
@@ -18,11 +18,11 @@ Run the function, which will save the HTMLs in the current directory.
 Source the player table function
 `source("Functions/getIndividualPlayerTables.R")`  
 
-The function requires the paths to the files. Here, I'm within the directory with the HTMLs.
+The function requires the paths to the files. Here, I'm within the directory with the HTMLs.   
 `playerHTMLs = list.files()`
 
-Run the function
-`allPlayerList = getIndividualPlayerTables(playerHTMLs)`
+Run the function.  
+`allPlayerList = getIndividualPlayerTables(playerHTMLs)`  
 
-The data table of each player is in a list. Thus, for example, obtain the first 2 weeks of data.
+The data table of each player is in a list. Thus, for example, obtain the first 2 weeks of data.  
 `allPlayerWk1_2 = lapply(allPlayerList, function(x) x[1:2,])`
