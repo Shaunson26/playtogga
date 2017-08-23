@@ -26,3 +26,19 @@ Run the function.
 
 The data table of each player is in a list. Thus, for example, obtain the first 2 weeks of data.  
 `allPlayerWk1_2 = lapply(allPlayerList, function(x) x[1:2,])`
+
+## Fitting GLMs to each variable
+
+Here, I assume the count of each variable/statistic (goal, assists, etc) is poisson distributed, and will fit a GLM to each one for each player using the previous weeks data. I use the fits to look at the probability of the counts for each variable.  
+
+To make things shorter, I will only look at Liverpool teams in this example (the row with @CRY in the OPP column of the player data table).  
+`playersWanted = row.names(do.call(rbind, lapply(allPlayerWk1_2, function(x) grep("@CRY", x[, "OPP"]))))`  
+`playersLiverpool = allPlayerWk2[ playersWanted ]`  
+
+Then fit the GLMs.  
+`pLGLMs = fitAllStatPoissonGLMs(playersLiverpool)`  
+
+Then use the lattice package to make barplots for each player.  
+`plotAllPlayerDistributions(pLGLMs)`  
+
+
