@@ -8,7 +8,7 @@ getPlayerQuantitles <- function(playerGLMs, allPlayerList, quantitles = NULL){
       QQs = structure(quantitles, names = paste("Q", quantitles, sep = ""))
     }
   
-  qqScores = lapply(QQs, function(x) quantitleScores(playerGLMs, x))
+  qqScores = lapply(QQs, function(x) quantitleStatistics(playerGLMs, x))
   
   lapply(qqScores, function(x){
     playerPos = sapply(row.names(x), function(y) allPlayerListMat$POS[grep(y, row.names(allPlayerListMat))[1]])

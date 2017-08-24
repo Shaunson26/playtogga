@@ -1,4 +1,4 @@
-mostLikelyScores <- function(myFit){
+mostLikelyStatistics <- function(myFit){
   do.call(rbind,
           lapply(myFit, function(y) {
             do.call(c, 
@@ -10,7 +10,7 @@ mostLikelyScores <- function(myFit){
   )
 }
 
-quantitleScores <- function(myFit, quantileThreshold = 50){
+quantitleStatistics <- function(myFit, quantileThreshold = 50){
   do.call(rbind,
           lapply(myFit, function(y) {
             do.call(c, 
