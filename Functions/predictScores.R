@@ -10,7 +10,7 @@ mostLikelyStatistics <- function(myFit){
   )
 }
 
-quantitleStatistics <- function(myFit, quantileThreshold = 50){
+quantileStatistics <- function(myFit, quantileThreshold = 50){
   do.call(rbind,
           lapply(myFit, function(y) {
             do.call(c, 

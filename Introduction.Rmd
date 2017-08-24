@@ -1,0 +1,116 @@
+---
+title: "togga FPL statistics"
+author: "Shaun Nielsen"
+date: "24 August 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, options(width = 800), comment = NA, message = F, fig.align = "center")
+```
+
+# playtogga
+
+Functions and data for scraping/downloading playtogga FPL data.  
+
+# The process
+With my limited expertise, I have put together some R functions for scraping the player tables from playtogga. The main scrape function uses RSelenium to run your browser, login, and then use a user-specified file (an updated file of each and every player is provided) that navigates to the player tables wanted and the HTMLs are saved. Another function extracts uses the XML package to extract tables from the HTMLs, cleans them and puts them into a list in R.
+
+## Downlading HTMLs
+
+Source the download function and the player URL file (character matrix with name, URL, team and position columns).
+
+```{r, eval = F}
+source("Functions/downloadPlayerHTMLs.R") 
+load("Data/playerNamesURLs_Aug2017.RData")
+head(playerNameURL)
+```  
+
+Run the function `downloadPlayerHTMLs`, which will save the HTMLs in the current directory.
+
+```{r, eval = F}
+downloadPlayerHTMLs(login = "user", password = "password", playerNameURL = playerNameURL)`
+```
+
+## Cleaning player tables
+
+Source the player table function.
+
+```{r}
+source("Functions/getIndividualPlayerTables.R")
+```
+
+The function `getIndividualPlayerTables` requires the paths to the files. I will only look at the first 10 players here.
+
+```{r}
+setwd("C:/Users/Shaunus/Desktop/Togga/PlayerHTMLs/")
+playerHTMLs = list.files(pattern = ".html")
+# Only the first 10 HTMLs [1:10]
+allPlayerList = getIndividualPlayerTables(playerHTMLs[1:10])
+setwd("C:/Users/Shaunus/Desktop/Togga/playtogga/")
+```
+
+The data table of each player is in a list. 
+
+```{r}
+# Show only the first 2 [1:2]
+allPlayerList[1:2]
+```
+
+Thus, for example, obtain the first 2 weeks of data.
+
+```{r}
+# x[rows, columns] where row is equal to week
+allPlayerWk1_2 = lapply(allPlayerList, function(x) x[1:2,])
+
+# Show only the first 5 [1:5]
+allPlayerWk1_2[1:5]
+```
+
+## Fitting GLMs to each variable
+
+Here, I assume the count of each variable/statistic (goal, assists, etc) is Poisson distributed, and will fit a GLM to each one for each player using the previous weeks data. I use the fits to look at the probability of the counts for each variable. This is done using `fitAllStatPoissonGLMs`. The result is a list of GLMs fit for each player for each statistic.
+
+```{r}
+source("Functions/fitPoissonGLM.R") 
+
+pW2Glms = fitAllStatPoissonGLMs(allPlayerWk1_2, varRange = 0:12)
+attributes(pW2Glms$`A. Ayew`)
+pW2Glms$`A. Ayew`$G
+```
+
+We can plot the distributions of the statistics for one player using `plotOnePlayerDistributions`, or all players using `plotAllPlayerDistributions`.
+
+```{r}
+source("Functions/plotDistributions.R")
+
+plotOnePlayerDistributions(pW2Glms$`A. Ayew`, main = "A. Ayew")
+plotAllPlayerDistributions(pW2Glms[1:2])
+```
+
+## Predicting scores
+
+The most likely score given the distribution in the figures above uses `mostLikelyStatistics`.
+```{r}
+source("Functions/predictScores.R")
+
+mostLikelyStatistics(pW2Glms)
+```
+
+Or we can look at quantiles using 'quantileStatistics`. This makes a list with the scores for the quantiles given - using 10, 50, 90, should provide an estimate sure surely, on average, and unlikely, respectively.
+
+```{r}
+source("Functions/getPlayerQuantiles.R")
+
+qqScoresList = getPlayerQuantiles(pW2Glms, allPlayerWk1_2, quantiles = c(10,50,90))
+qqScoresList$Q50
+```
+
+We can then use the event scoring table from playtogga to work out the points scored given the statistics using `calculateBytoggaScores`.
+
+```{r}
+source("Functions/calculateBytoggaScores.R")
+load("Data/eventScores.RData")
+
+t(do.call(rbind, calculateBytoggaScores(qqScoresList, eventScores)))
+```

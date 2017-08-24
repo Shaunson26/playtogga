@@ -11,6 +11,6 @@ calculateBytoggaScores <- function(qqScoresList, eventScores){
       }))
     datOut = as.matrix.data.frame(datOut)
     row.names(datOut) = row.names(x)
-    rowSums(datOut)
+    rowSums(datOut,na.rm = T)
     })
 }
