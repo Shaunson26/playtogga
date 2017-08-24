@@ -145,11 +145,11 @@ head(playerNameURL)</code></pre>
 <p>Source the player table function.</p>
 <pre class="r"><code>source(&quot;Functions/getIndividualPlayerTables.R&quot;)</code></pre>
 <p>The function <code>getIndividualPlayerTables</code> requires the paths to the files. I will only look at the first 10 players here.</p>
-<pre class="r"><code>setwd(&quot;C:/Users/Shaunus/Desktop/Togga/PlayerHTMLs/&quot;)
+<pre class="r"><code>
 playerHTMLs = list.files(pattern = &quot;.html&quot;)
 # Only the first 10 HTMLs [1:10]
 allPlayerList = getIndividualPlayerTables(playerHTMLs[1:10])
-setwd(&quot;C:/Users/Shaunus/Desktop/Togga/playtogga/&quot;)</code></pre>
+</code></pre>
 <p>The data table of each player is in a list.</p>
 <pre class="r"><code># Show only the first 2 [1:2]
 allPlayerList[1:2]</code></pre>
