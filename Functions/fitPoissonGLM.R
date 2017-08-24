@@ -1,6 +1,7 @@
 ## Poisson many fitters
 fitAllStatPoissonGLMs <- function(allPlayerList, varRange = 0:10){
-  pWStat = lapply(allPlayerList, function(x) x[, -c(1:3)])
+  vars = c("G","A","CC","SCR","SOT","STO","AER","CLR","CS","INT","PS","SV","TW","DIS","GC","OG","YC","RC")
+  pWStat = lapply(allPlayerList, function(x) x[, vars])
   lapply(pWStat, function(x) lapply(x, function(y) fitPoissonGLM(y, varRange)))
 }
 

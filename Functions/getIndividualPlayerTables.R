@@ -11,11 +11,16 @@ getIndividualPlayerTables <- function(filesIn){
     tableIn = tableIn[-1,]
     rownames(tableIn) = 1:nrow(tableIn)
     for(j in c(1,3:ncol(tableIn))){ tableIn[,j] = as.numeric(as.character(tableIn[,j]))}
-    #minsIn = htmlIn[grep("MIN", htmlIn)]
-    #minsIn = sub(".+<br..> ", "", minsIn)
-    #minsIn = sub(" .+", "", minsIn)
-    #allDatList[[i]] = list(playerDat = tableIn, minsPlayed = minsIn)
     
+    # Add position
+    nameLoc = grep("class=\"name\"", htmlIn)[1]
+    posType = sub(".+ | ", "", sub(" \\| <.+", "", htmlIn[nameLoc+1]))
+    shortPosType = c("FOR", "MID", "DEF", "GOA")[c("Forward", "Midfielder", "Defender", "Goalkeeper") %in% posType]
+    
+    # Add team?
+    
+    # Join data.frame
+    tableIn = data.frame(POS = shortPosType, tableIn)
     allDatList[[i]] = tableIn
     names(allDatList)[i] = sub(".html", "", filesIn[i])
   }
