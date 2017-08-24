@@ -112,5 +112,26 @@ We can then use the event scoring table from playtogga to work out the points sc
 source("Functions/calculateBytoggaScores.R")
 load("Data/eventScores.RData")
 
-t(do.call(rbind, calculateBytoggaScores(qqScoresList, eventScores)))
+calculateBytoggaScores(qqScoresList, eventScores)
+```
+
+If we are more inclined, we can plot the predictions across the quantiles.
+
+```{r, fig.width=10}
+qqScoresList = getPlayerQuantiles(pW2Glms, allPlayerWk1_2, quantiles = seq(1,99, length = 50))
+playerScores = data.frame(t(calculateBytoggaScores(qqScoresList, eventScores)))
+playerScores = playerScores[, 1:10]
+playerScores.stack = stack(playerScores)
+playerScores.stack$QQ = row.names(playerScores)
+
+densityplot(~values | ind, data = playerScores.stack,
+            layout = c(5,2), between = list(y = 0.5),
+            xlab = "Predicted points", ylab = "Likelihood density",
+            scales = list(alternating = F,
+                            y = list(relation = "free", rot = 0), 
+                            x = list(relation = "free", rot = 90)), #limits = c(-10,30))),
+            panel = function(x){ 
+              panel.densityplot(x, plot.points = F, adjust = 5,darg = list(adjust = 1.5), lwd = 2)
+              panel.abline(v = 0, col = "grey50", lwd = 1.5, lty = 2)
+              })
 ```
