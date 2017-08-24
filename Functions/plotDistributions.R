@@ -19,7 +19,8 @@ plotDistributions <- function(myFit, main = NULL...){
     barchart(values ~ hits | ind, data = datInStack,
            main = main, xlab = "Hits", ylab = "% likelihood",
            layout = c(6,3), between = list(x = 0.5, y = 0.5),
-           scales = list(alternating = F, x = list(rot = 90)),
+           scales = list(alternating = F, x = list(rot = 90, labels = 0:10, at = 1:11)),
            horizontal = F)
   )
 }
+
