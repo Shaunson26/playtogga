@@ -20,7 +20,7 @@ plotOnePlayerDistributions <- function(myFit, main = NULL, ...){
     barchart(values ~ hits | ind, data = datInStack,
            main = main, xlab = "Hits", ylab = "% likelihood",
            layout = c(6,3), between = list(x = 0.5, y = 0.5),
-           scales = list(alternating = F, x = list(rot = 90, labels = 0:20, at = 1:21)),
+           scales = list(alternating = F, x = list(rot = 90, labels = 0:40, at = 1:41)),
            horizontal = F)
   )
 }
