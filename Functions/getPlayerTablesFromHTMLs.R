@@ -1,4 +1,4 @@
-getIndividualPlayerTables <- function(filesIn){
+getPlayerTablesFromHTMLs <- function(filesIn){
   
   require(XML)
   
@@ -13,14 +13,15 @@ getIndividualPlayerTables <- function(filesIn){
     for(j in c(1,3:ncol(tableIn))){ tableIn[,j] = as.numeric(as.character(tableIn[,j]))}
     
     # Add position
-    nameLoc = grep("class=\"name\"", htmlIn)[1]
-    posType = sub(".+ | ", "", sub(" \\| <.+", "", htmlIn[nameLoc+1]))
-    shortPosType = c("FOR", "MID", "DEF", "GOA")[c("Forward", "Midfielder", "Defender", "Goalkeeper") %in% posType]
+    #nameLoc = grep("class=\"name\"", htmlIn)[1]
+    #posType = sub(".+ | ", "", sub(" \\| <.+", "", htmlIn[nameLoc+1]))
+    #shortPosType = c("FOR", "MID", "DEF", "GOA")[c("Forward", "Midfielder", "Defender", "Goalkeeper") %in% posType]
     
     # Add team?
     
     # Join data.frame
-    tableIn = data.frame(POS = shortPosType, tableIn)
+    #tableIn = data.frame(POS = shortPosType, tableIn)
+    tableIn = data.frame(tableIn)
     allDatList[[i]] = tableIn
     names(allDatList)[i] = sub(".html", "", filesIn[i])
   }

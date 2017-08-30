@@ -1,33 +1,38 @@
-getPlayerProportionsInTeam <- function(allPlayerTables, playerNameURL, gameWeeks = NULL){
-  
-  if(is.null(gameWeeks)) stop("No game weeks specified")
+getTeamList <- function(allPlayerTableList){
+  temp.mat = do.call(rbind, allPlayerTableList)
+  uniqueTeams = unique(temp.mat[, "Team"])
+  allTeam.list = lapply(uniqueTeams, function(tm) temp.mat[ temp.mat[,"Team"] == tm,])
+  names(allTeam.list) <- uniqueTeams
+  allTeam.list
+}
 
+sepGameWeekinTeam <- function(allTeamList){
+  gwByTeam.list = lapply(allTeamList, function(tm) {
+    gameWeeks = unique(tm[, "GW"])
+    gameWeek.list = lapply(gameWeeks, function(gw) tm[ tm[,"GW"] == gw,])
+    names(gameWeek.list) = gameWeeks
+    return(gameWeek.list)
+  })
+}
+
+returnTableProps = function(table){
+  info = c("Name", "Team", "POS")
   vars = c("G","A","CC","SCR","SOT","STO","AER","CLR","CS","INT","PS","SV","TW","DIS","GC","OG","YC","RC")
-  teamNames = c("MUN","WBA","TOT","ARS","BRN","LEI","LIV","WAT","HUD","MCI","SOU","CHE","EVE","SWA","CRY","WHU","BOU","STK","NEW","BHA")
-  names(teamNames) = teamNames
-  
-  playersInTeam = lapply(teamNames, function(tn) {
-    playerNames = row.names(playerNameURL)[playerNameURL$Team == tn]
-    playerNames = playerNames[ !is.na(playerNames)]
-  })
-  
-  teamSepList = lapply(teamNames, function(pIT) {
-    teamOut = allPlayerTables[playersInTeam[[pIT]]]
-    teamOut[ !is.na(names(teamOut))]
-  })
-  
-  teamByWeekProportions = lapply(teamNames, function(tn) {
-    teamIn = teamSepList[[tn]]
-    teamByWeekList = lapply(gameWeeks, function(gw) do.call(rbind, lapply(teamIn, function(y) y[gw, vars])))
-    teamByWeekProportions =lapply(teamByWeekList, function(tbwl) round(t(t(tbwl)/colSums(tbwl)), 2))
-    namesUni = unique(do.call(c, lapply(teamByWeekProportions, function(tbwp) row.names(tbwp))))
-    teamByWeekProportions = do.call(rbind, lapply(namesUni, function(x) 
-      colMeans(do.call(rbind, lapply(teamByWeekProportions, function(y) y[x,])), na.rm = T)))
-    row.names(teamByWeekProportions) <- namesUni
-    teamByWeekProportions[is.nan(teamByWeekProportions)] <- 0
-    return(teamByWeekProportions)
-  })
-  
-  return(teamByWeekProportions)
+  tblIn = table[, vars]
+  tblIn = t(t(tblIn) / colSums(tblIn))
+  tblIn[ is.nan(tblIn)] <- 0
+  tblOut = data.frame(table[, info], tblIn)
+  return(tblOut)
+}
 
+
+playerProps = function(list){
+  info = c("Name", "Team", "POS")
+  vars = c("G","A","CC","SCR","SOT","STO","AER","CLR","CS","INT","PS","SV","TW","DIS","GC","OG","YC","RC")
+  dat.mat = do.call(rbind, list)
+  tblOut = t(sapply(unique(dat.mat$Name), function(nm) colMeans( dat.mat[ dat.mat$Name == nm, vars])))
+  statOut = do.call(rbind, lapply(unique(dat.mat$Name), function(nm) dat.mat[ dat.mat$Name == nm, info][1,]))
+  tblOut = data.frame(statOut, tblOut)
+  row.names(tblOut) <- tblOut$Name
+  tblOut
 }

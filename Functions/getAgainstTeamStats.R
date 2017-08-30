@@ -1,24 +1,22 @@
-getGameWeekAgainstStats <- function(getAgainstTeamStats, gameWeeks = NULL){
+getAgainstTeamStats <- function(allPlayerTableList){
   
-  if(is.null(gameWeeks)) stop("No game weeks specified")
+  temp.mat = do.call(rbind, allPlayerTableList)
+  temp.mat$OPP = sub("@", "", sub(",", "", sub(",.+", "", temp.mat$OPP)))
+  uniqueTeams = unique(temp.mat[, "OPP"])
   
-  lapply(againstTeamStats, function(ats){
-    gWAP =  t(sapply(gameWeeks, function(x) colSums(ats[ats$GW == x, -(1:4)])))
-    gcReal = t(sapply(gameWeeks, function(x) max(ats[ats$GW == x,  "GC"])))
-    gWAP[, "GC"] <- gcReal
-    return(gWAP)
-  })}
-
-getAgainstTeamStats <- function(playerTables){
+  vars = c("G","A","CC","SCR","SOT","STO","AER","CLR","CS","INT","PS","SV","TW","DIS","GC","OG","YC","RC")
   
-  teamNames = c("MUN","WBA","TOT","ARS","BRN","LEI","LIV","WAT","HUD","MCI","SOU","CHE","EVE","SWA","CRY","WHU","BOU","STK","NEW","BHA")
+  allTeam.list = lapply(uniqueTeams, function(tm) {
+    matOut = temp.mat[ temp.mat[,"OPP"] == tm,]
+    matOut = matOut[ !is.na(matOut$PTS),]
+    gameWeeks = unique(matOut[, "GW"])
+    t(sapply(gameWeeks, function(gw) colSums(matOut[ matOut[,"GW"] == gw, vars])))
+    #names(gameWeek.list) = gameWeeks
+    #return(gameWeek.list)
+  })
   
-  againstTeamStats = lapply(teamNames, function(tn) {
-    teamMat =  do.call(rbind, lapply(playerTables, function(x) x[grep(tn, x$OPP),]))
-    teamMat = teamMat[!is.na(teamMat$PTS),]
-    })
+  names(allTeam.list) <- uniqueTeams
   
-  names(againstTeamStats) <- teamNames
-  
-  return(againstTeamStats)
+  round(t(sapply(allTeam.list, function(x) colMeans(x))),1)
 }
+  

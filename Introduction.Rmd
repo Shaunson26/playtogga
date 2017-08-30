@@ -16,55 +16,71 @@ Functions and data for scraping/downloading playtogga FPL data.
 # The process
 With my limited expertise, I have put together some R functions for scraping the player tables from playtogga. The main scrape function uses RSelenium to run your browser, login, and then use a user-specified file (an updated file of each and every player is provided) that navigates to the player tables wanted and the HTMLs are saved. Another function extracts uses the XML package to extract tables from the HTMLs, cleans them and puts them into a list in R.
 
+## Load all the functions and data
+
+A number of functions and data is provided to do all the steps.
+
+```{r}
+setwd("C:/Users/Shaunus/Desktop/Togga/playtogga/Functions/")
+
+for (f in list.files(pattern="*.R")) {
+  source(f)
+}
+
+setwd("C:/Users/Shaunus/Desktop/Togga/playtogga/Data/")
+load("eventScores.RData")
+load("playerNamesURLs_Aug2017.RData")
+```
+
 ## Downlading HTMLs
 
-Source the download function and the player URL file (character matrix with name, URL, team and position columns).
+The playerURLTeamPosition has player names, playtogga URL, team, position and games played information. There are >550 players, and having to download all their HTMLs will take some time. At week 3 of 2017, I was selected only those who have played.
 
-```{r, eval = F}
-source("Functions/downloadPlayerHTMLs.R") 
-load("Data/playerNamesURLs_Aug2017.RData")
-head(playerNameURL)
+```{r}
+head(playerURLTeamPosition)
+playerURLTeamPosition = playerURLTeamPosition[ playerURLTeamPosition$gamesPlayed > 0,]
 ```  
 
 Run the function `downloadPlayerHTMLs`, which will save the HTMLs in the current directory.
 
 ```{r, eval = F}
-downloadPlayerHTMLs(login = "user", password = "password", playerNameURL = playerNameURL)`
+downloadPlayerHTMLs(login = "user", password = "password", playerNameURL = playerURLTeamPosition)
 ```
 
 ## Cleaning player tables
 
-Source the player table function.
-
-```{r}
-source("Functions/getIndividualPlayerTables.R")
-```
-
 The function `getIndividualPlayerTables` requires the paths to the files. I will only look at the first 10 players here.
 
-```{r}
-setwd("C:/Users/Shaunus/Desktop/Togga/PlayerHTMLs/")
+```{r, eval = F}
 playerHTMLs = list.files(pattern = ".html")
-# Only the first 10 HTMLs [1:10]
-allPlayerList = getIndividualPlayerTables(playerHTMLs[1:10])
-setwd("C:/Users/Shaunus/Desktop/Togga/playtogga/")
 ```
 
 The data table of each player is in a list. 
 
-```{r}
-# Show only the first 2 [1:2]
-allPlayerList[1:2]
+```{r, echo = F}
+setwd("C:/Users/Shaunus/Desktop/Togga/")
+load("allPlayerTableList.RData")
 ```
 
-Thus, for example, obtain the first 2 weeks of data.
+```{r}
+allPlayerTable.list[[1]][1:5,]
+```
+
+For downstream use, we add the player name, team and position to this data.
 
 ```{r}
-# x[rows, columns] where row is equal to week
-allPlayerWk1_2 = lapply(allPlayerList, function(x) x[1:2,])
+allPlayerTable.list <- addPlayerInfoToPlayerTable(allPlayerTable.list, playerURLTeamPosition)
+allPlayerTable.list$`A. Ayew`[1:5,]
+```
+
+Thus, for example, obtain the first 3 weeks of data.
+
+```{r}
+gameWeeksWanted = 1:3
+allPlayerTableWks.list = lapply(allPlayerTable.list,  function(x) x[gameWeeksWanted,])
 
 # Show only the first 5 [1:5]
-allPlayerWk1_2[1:5]
+allPlayerTableWks.list[1:5]
 ```
 
 ## Fitting GLMs to each variable
@@ -72,60 +88,67 @@ allPlayerWk1_2[1:5]
 Here, I assume the count of each variable/statistic (goal, assists, etc) is Poisson distributed, and will fit a GLM to each one for each player using the previous weeks data. I use the fits to look at the probability of the counts for each variable. This is done using `fitAllStatPoissonGLMs`. The result is a list of GLMs fit for each player for each statistic.
 
 ```{r}
-source("Functions/fitPoissonGLM.R") 
-
-pW2Glms = fitAllStatPoissonGLMs(allPlayerWk1_2, varRange = 0:12)
-attributes(pW2Glms$`A. Ayew`)
-pW2Glms$`A. Ayew`$G
+playerGlms.list = fitAllStatPoissonGLMs(allPlayerTableWks.list)
+attributes(playerGlms.list$`A. Ayew`)
+playerGlms.list$`A. Ayew`$G
 ```
 
 We can plot the distributions of the statistics for one player using `plotOnePlayerDistributions`, or all players using `plotAllPlayerDistributions`.
 
 ```{r}
-source("Functions/plotDistributions.R")
-
-plotOnePlayerDistributions(pW2Glms$`A. Ayew`, main = "A. Ayew")
-plotAllPlayerDistributions(pW2Glms[1:2])
+plotOnePlayerDistributions(playerGlms.list$`A. Ayew`, main = "A. Ayew")
+plotAllPlayerDistributions(playerGlms.list[1:2])
 ```
 
 ## Predicting scores
 
 The most likely score given the distribution in the figures above uses `mostLikelyStatistics`.
-```{r}
-source("Functions/predictScores.R")
 
-mostLikelyStatistics(pW2Glms)
+```{r}
+mostLikelyStatistics(playerGlms.list)["H. Mkhitaryan",]
+```
+
+For which we can work out the togga points.
+
+```{r}
+playerMLStats = mostLikelyStatistics(playerGlms.list) 
+pNnames = row.names(playerMLStats)
+playerMLStats = data.frame(POS = playerURLTeamPosition$POS[sapply(pNnames, function(x) which(x == playerURLTeamPosition$Name))],
+                           playerMLStats)
+
+(predictedPoints = calculateBytoggaScores(list(playerMLStats), eventScores))[1:10,]
+
+stripchart(predictedPoints, method = "jitter", vert = T, ylab = "Predicted points", font.lab = 2,
+           pch = 19)
 ```
 
 Or we can look at quantiles using 'quantileStatistics`. This makes a list with the scores for the quantiles given - using 10, 50, 90, should provide an estimate sure surely, on average, and unlikely, respectively.
 
 ```{r}
-source("Functions/getPlayerQuantiles.R")
-
-qqScoresList = getPlayerQuantiles(pW2Glms, allPlayerWk1_2, quantiles = c(10,50,90))
-qqScoresList$Q50
+qqScoresList = getPlayerQuantiles(playerGlms.list, allPlayerTable.list, quantiles = c(10,25,50,75,90))
+qqScoresList$Q50[1:10,]
 ```
 
 We can then use the event scoring table from playtogga to work out the points scored given the statistics using `calculateBytoggaScores`.
 
 ```{r}
-source("Functions/calculateBytoggaScores.R")
-load("Data/eventScores.RData")
-
-calculateBytoggaScores(qqScoresList, eventScores)
+(predictedPointsQQ = calculateBytoggaScores(qqScoresList, eventScores))[1:10,]
+boxplot(predictedPointsQQ)
 ```
 
 If we are more inclined, we can plot the predictions across the quantiles.
 
 ```{r, fig.width=10}
-qqScoresList = getPlayerQuantiles(pW2Glms, allPlayerWk1_2, quantiles = seq(1,99, length = 50))
+qqScoresList = getPlayerQuantiles(playerGlms.list, allPlayerTableWks.list, quantiles = seq(1,99, length = 50))
 playerScores = data.frame(t(calculateBytoggaScores(qqScoresList, eventScores)))
-playerScores = playerScores[, 1:10]
+set.seed(1010)
+samplePlayers = sample(1:nrow(playerScores), size = 15)
+playerScores = playerScores[, samplePlayers]
 playerScores.stack = stack(playerScores)
 playerScores.stack$QQ = row.names(playerScores)
 
 densityplot(~values | ind, data = playerScores.stack,
-            layout = c(5,2), between = list(y = 0.5),
+            layout = c(5,3), between = list(y = 0.5),
             xlab = "Predicted points", ylab = "Likelihood density",
             scales = list(alternating = F,
                             y = list(relation = "free", rot = 0), 
