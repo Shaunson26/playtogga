@@ -113,39 +113,45 @@ For which we can work out the togga points.
 ```{r}
 playerMLStats = mostLikelyStatistics(playerGlms.list) 
 pNnames = row.names(playerMLStats)
-playerMLStats = data.frame(POS = playerURLTeamPosition$POS[sapply(pNnames, function(x) which(x == playerURLTeamPosition$Name))],
-                           playerMLStats)
+playerMLStats = data.frame(POS = playerURLTeamPosition$POS[sapply(pNnames, function(x) which(x == playerURLTeamPosition$Name))],playerMLStats)
 
-(predictedPoints = calculateBytoggaScores(list(playerMLStats), eventScores))[1:10,]
-
-stripchart(predictedPoints, method = "jitter", vert = T, ylab = "Predicted points", font.lab = 2,
-           pch = 19)
+predictedPoints = calculateBytoggaScores(list(playerMLStats), eventScores)
+predictedPoints[1:5,]
+hist(predictedPoints, breaks = 40, col = "grey50")
 ```
 
 Or we can look at quantiles using 'quantileStatistics`. This makes a list with the scores for the quantiles given - using 10, 50, 90, should provide an estimate sure surely, on average, and unlikely, respectively.
 
 ```{r}
 qqScoresList = getPlayerQuantiles(playerGlms.list, allPlayerTable.list, quantiles = c(10,25,50,75,90))
-qqScoresList$Q50[1:10,]
+qqScoresList$Q50[1:5,]
 ```
 
 We can then use the event scoring table from playtogga to work out the points scored given the statistics using `calculateBytoggaScores`.
 
 ```{r}
-(predictedPointsQQ = calculateBytoggaScores(qqScoresList, eventScores))[1:10,]
-boxplot(predictedPointsQQ)
+predictedPointsQQ = calculateBytoggaScores(qqScoresList, eventScores)
+predictedPointsQQ[1:10,]
+boxplot(predictedPointsQQ, ylab = "Predicted points", font.lab = 2)
 ```
 
 If we are more inclined, we can plot the predictions across the quantiles.
 
-```{r, fig.width=10}
+```{r, fig.width=10, fig.height=8}
 qqScoresList = getPlayerQuantiles(playerGlms.list, allPlayerTableWks.list, quantiles = seq(1,99, length = 50))
-playerScores = data.frame(t(calculateBytoggaScores(qqScoresList, eventScores)))
+playerScores = calculateBytoggaScores(qqScoresList, eventScores)
+meanPTS = sapply(allPlayerTableWks.list, function(x) mean(x[, "PTS"], na.rm = T))
+playerScores = (playerScores + meanPTS)/2
+
+#playerScores = data.frame(t(calculateBytoggaScores(qqScoresList, eventScores)))
+playerScores = data.frame(t(playerScores))
+
 set.seed(1010)
 samplePlayers = sample(1:nrow(playerScores), size = 15)
 playerScores = playerScores[, samplePlayers]
 playerScores.stack = stack(playerScores)
 playerScores.stack$QQ = row.names(playerScores)
+playerScores.stack$Name = rep(names(playerGlms.list)[samplePlayers], each = 50)
 
 densityplot(~values | ind, data = playerScores.stack,
             layout = c(5,3), between = list(y = 0.5),
@@ -153,8 +159,16 @@ densityplot(~values | ind, data = playerScores.stack,
             scales = list(alternating = F,
                             y = list(relation = "free", rot = 0), 
                             x = list(relation = "free", rot = 90)), #limits = c(-10,30))),
-            panel = function(x){ 
+            panel = function(x, subscripts, ...){ 
               panel.densityplot(x, plot.points = F, adjust = 5,darg = list(adjust = 1.5), lwd = 2)
               panel.abline(v = 0, col = "grey50", lwd = 1.5, lty = 2)
+              nameIn = playerScores.stack$Name[subscripts[1]]
+              realPTS = allPlayerTableWks.list[nameIn][[1]][, "PTS"]
+              panel.xyplot(y = rep(0, length(realPTS)), x = realPTS, col = 2, pch = 4, lwd = 2)
               })
 ```
+
+
+
+
+

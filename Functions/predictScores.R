@@ -9,15 +9,3 @@ mostLikelyStatistics <- function(myFit){
           })
   )
 }
-
-quantileStatistics <- function(myFit, quantileThreshold = 50){
-  do.call(rbind,
-          lapply(myFit, function(y) {
-            do.call(c, 
-                    lapply(y, function(x){
-                      cumsumPcnts = cumsum(x$outPcnt)
-                      as.numeric(names(x$outPcnt[cumsumPcnts > quantileThreshold][1]))
-                    }))
-          })
-  )
-}

@@ -7,6 +7,7 @@ getPlayerQuantiles <- function(manyGLMs, allPlayerTableList = NULL, quantiles = 
       QQs = structure(quantiles, names = paste("Q", quantiles, sep = ""))
     }
   
+  ## Do the main function
   qqScores = lapply(QQs, function(qq) 
     t(sapply(manyGLMs, function(mglm) quantileStatistics(mglm, qq)))
   )
